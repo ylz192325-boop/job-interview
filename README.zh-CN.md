@@ -6,7 +6,7 @@
 
 根据招聘要求截图、文档或文字，为每个岗位固定生成 **30 道面试题和 30 个简洁参考答案**。
 
-这是一个用于 Codex 的 skill。它将岗位要求转化为可练习的问答，适合求职者准备面试，也适合面试官拟定问题。题目覆盖技术、产品、运营、销售、管理等岗位，按实际职责和经验层级调整。
+这是一个用于 **Codex 和 Claude Code** 的 skill，两端共用同一份 `SKILL.md`。它将岗位要求转化为可练习的问答，适合求职者准备面试，也适合面试官拟定问题。题目覆盖技术、产品、运营、销售、管理等岗位，按实际职责和经验层级调整。
 
 ## 功能
 
@@ -19,7 +19,9 @@
 
 ## 安装
 
-需要一个支持 skills 的 Codex 环境。该 skill 没有独立程序或内置文档解析器；截图和附件读取使用当前环境提供的能力。无需为此 skill 配置特定 OCR 服务或额外 API key，Codex 本身的模型访问仍使用你的现有配置。
+需要一个支持 skills 的 Codex 或 Claude Code 环境。该 skill 没有独立程序或内置文档解析器；截图和附件读取使用当前环境提供的能力。Claude Code 可通过文件路径读取支持的图片、PDF 和文字；DOCX 需要可用的本地文档解析或 ZIP/XML 工具。无需为此 skill 配置特定 OCR 服务或额外 API key，宿主本身的模型访问仍使用你的现有配置。
+
+### Codex
 
 下载本仓库并解压后，将仓库根目录中的 `job-interview-qa/` 文件夹复制到：
 
@@ -38,7 +40,30 @@ else
 fi
 ```
 
-安装后的结构应为：
+### Claude Code
+
+将同一个 `job-interview-qa/` 文件夹复制到以下一个位置：
+
+| 安装范围 | skill 目录 |
+| --- | --- |
+| 个人安装，所有项目可用 | `~/.claude/skills/job-interview-qa/` |
+| 项目安装，仅该项目使用 | `<项目目录>/.claude/skills/job-interview-qa/` |
+
+macOS / Linux 在仓库根目录执行以下命令完成个人安装。若只安装到某个项目，将第一行替换为 `skill_install_root="/你的项目路径/.claude/skills"`：
+
+```sh
+skill_install_root="$HOME/.claude/skills"
+skill_install_target="$skill_install_root/job-interview-qa"
+if [ -e "$skill_install_target" ] || [ -L "$skill_install_target" ]; then
+  printf '%s\n' 'job-interview-qa already exists; compare it before updating.'
+else
+  mkdir -p "$skill_install_root" && cp -R ./job-interview-qa "$skill_install_root/"
+fi
+```
+
+在目标项目中启动 Claude Code，输入 `/job-interview-qa` 调用。`agents/openai.yaml` 是 Codex 的界面元数据，Claude Code 使用 `SKILL.md`，可以直接复制整个 skill 文件夹。安装路径与调用方式参见 [Claude Code 官方 skills 文档](https://code.claude.com/docs/en/skills)。
+
+两端安装后的 skill 内部结构相同：
 
 ```text
 skills/
@@ -48,13 +73,20 @@ skills/
         └── openai.yaml
 ```
 
-在新对话中输入 `$job-interview-qa`，按可用 skill 调用它。若未发现该名称，先确认安装路径和 `SKILL.md` 所在层级，再重新打开 Codex 后检查。
+Codex 在新对话中使用 `$job-interview-qa`，Claude Code 使用 `/job-interview-qa`。若未发现该名称，先确认安装路径和 `SKILL.md` 所在层级，再开启新会话检查；Claude Code 中可输入 `/` 查看可用技能。
 
 ## 使用
 
-1. 上传招聘截图或文档，或者粘贴岗位职责与任职要求。
-2. 输入下面的指令。
+1. 上传招聘截图或文档、提供可访问的本地文件路径，或者粘贴岗位职责与任职要求。
+2. 使用对应平台的调用语法输入指令。
 3. 查看岗位要点，以及按能力分组的 30 道题和 30 个答案。
+
+| 平台 | 显式调用 |
+| --- | --- |
+| Codex | `$job-interview-qa 你的要求` |
+| Claude Code | `/job-interview-qa 你的要求` |
+
+以下三个示例用于 Codex；Claude Code 将开头的 `$job-interview-qa` 改为 `/job-interview-qa` 即可。
 
 ### 招聘截图或附件
 
@@ -76,6 +108,20 @@ $job-interview-qa 根据以下JD，按1–3年经验设计30道面试题。每�
 ```text
 $job-interview-qa 请用英文输出。附件包含两个不同岗位，请分别生成30道面试题和30个简洁参考答案。
 ```
+
+### Claude Code 本地文件或文字
+
+```text
+/job-interview-qa 根据 /你的文件路径/招聘要求.png，为这个岗位固定生成30道面试题，并逐题给出简洁易懂的参考答案。
+```
+
+```text
+/job-interview-qa 根据以下JD固定生成30道面试题和30个简洁参考答案：
+岗位职责与任职要求：
+在这里粘贴招聘文字。
+```
+
+文件路径中有空格时用引号包住；使用当前环境允许访问的路径。截图、PDF 的读取效果受清晰度、文档长度和模型能力影响；DOCX 使用本地解析工具，无法读取时提供可读文字。
 
 简历和候选人经历是可选信息，不是开始出题的前提。需要结合个人经历回答时，可以补充真实项目事实。
 
@@ -135,6 +181,6 @@ $job-interview-qa 请用英文输出。附件包含两个不同岗位，请分�
         └── openai.yaml
 ```
 
-[SKILL.md](job-interview-qa/SKILL.md) 是运行指令；[openai.yaml](job-interview-qa/agents/openai.yaml) 是界面名称、简介与默认调用提示。
+[SKILL.md](job-interview-qa/SKILL.md) 是 Codex 与 Claude Code 共用的运行指令；[openai.yaml](job-interview-qa/agents/openai.yaml) 提供 Codex 的界面名称、简介与默认调用提示。
 
 上传到 GitHub 时，将此目录中的两个 README 和 `job-interview-qa/` 文件夹放在仓库根目录。GitHub 默认展示英文 README，读者可通过顶部链接切换到中文版。
